@@ -1,0 +1,26 @@
+{
+	"name": "WikiAnalytics",
+	"version": "1.0",
+	"author": [
+		"Kimberly Brewer [ITSC]"
+	],
+	"descriptionmsg": "wikianalytics-desc",
+	"license-name": "GPL-2.0-or-later",
+	"type": "other",
+	"requires": {
+		"MediaWiki": ">= 1.43.0",
+        "extensions": {
+            "TimedMediaHandler": "0.6.0"
+        }
+	},
+	"MessagesDirs": {
+		"WikiAnalytics": "i18n"
+	},
+	"AutoloadNamespaces": {
+		"WikiAnalytics\\": "includes/"
+	},
+	"SpecialPages": {
+		"WikiAnalytics": "WikiAnalytics\\SpecialWikiAnalytics"
+	},
+	"manifest_version": 2
+}
