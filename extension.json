@@ -17,10 +17,20 @@
 		"WikiAnalytics": "i18n"
 	},
 	"AutoloadNamespaces": {
-		"WikiAnalytics\\": "includes/"
+    	"MediaWiki\\Extension\\WikiAnalytics\\": "includes/"
+	},
+	"schemaUpdates": {
+  		"sqlite": [
+    		"sql/persisted_monthly_analytics.sql"
+  		]
 	},
 	"SpecialPages": {
 		"WikiAnalytics": "WikiAnalytics\\SpecialWikiAnalytics"
 	},
+	"MaintenanceScripts": {
+   		"WikiAnalytics:CaptureMonthlyWikiStats": "maintenance/CaptureMonthlyWikiStats.php",
+    	"WikiAnalytics:TestWikiAnalyticsRead": "maintenance/TestWikiAnalyticsRead.php"
+	},
+
 	"manifest_version": 2
 }
