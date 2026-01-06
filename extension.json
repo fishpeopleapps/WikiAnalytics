@@ -16,8 +16,18 @@
 	"MessagesDirs": {
 		"WikiAnalytics": "i18n"
 	},
+	"ExtensionMessagesFiles": {
+		"WikiAnalyticsAlias": "i18n/en.alias.php"
+	},
 	"AutoloadNamespaces": {
     	"MediaWiki\\Extension\\WikiAnalytics\\": "includes/"
+	},
+    "ResourceModules": {
+		"ext.wikianalytics": {
+			"styles": [
+				"resources/range.css"
+			]
+		}
 	},
 	"schemaUpdates": {
   		"sqlite": [
@@ -25,7 +35,9 @@
   		]
 	},
 	"SpecialPages": {
-		"WikiAnalytics": "WikiAnalytics\\SpecialWikiAnalytics"
+		"WikiAnalytics": {
+			"class": "MediaWiki\\Extension\\WikiAnalytics\\SpecialWikiAnalytics"
+		}
 	},
 	"MaintenanceScripts": {
    		"WikiAnalytics:CaptureMonthlyWikiStats": "maintenance/CaptureMonthlyWikiStats.php",

@@ -1,0 +1,18 @@
+/* Hide custom date picker unless we enable it later */
+.wa-range-dropdown {
+    max-width: 260px;
+}
+
+/* Make the top controls feel compact */
+.wa-range-form .oo-ui-horizontalLayout {
+    align-items: center;
+    gap: 12px;
+}
+
+.wa-compare-label {
+    margin-left: 8px;
+    font-size: 0.875rem;
+    color: #54595d;
+    line-height: 32px;
+}
+

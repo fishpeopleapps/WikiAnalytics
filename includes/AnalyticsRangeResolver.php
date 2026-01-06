@@ -55,11 +55,13 @@ class AnalyticsRangeResolver {
                 return self::resolveCustomRange( $params, $now );
 
             case 'all':
+                $start = (clone $now)->modify('-10 years');
+
                 return [
-                    'startYear'  => null,
-                    'startMonth' => null,
-                    'endYear'    => null,
-                    'endMonth'   => null,
+                    'startYear'  => (int)$start->format('Y'),
+                    'startMonth' => (int)$start->format('n'),
+                    'endYear'    => (int)$now->format('Y'),
+                    'endMonth'   => (int)$now->format('n'),
                 ];
 
             case 'last12':
