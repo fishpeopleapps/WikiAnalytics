@@ -1,0 +1,40 @@
+<!-- Root container for the analytics form -->
+<div id="analytics-form" style="display:none;">
+    <fieldset>
+        <legend>Analytics Range</legend>
+
+        <!-- Range selection (dropdown populated by JS) -->
+        <label for="analytics-range">Range:</label>
+        <select id="analytics-range" name="range">
+            <!-- RANGES -->
+        </select>
+
+        <!-- Date picker placeholder (shown for custom range) -->
+        <fieldset>
+            <legend>Custom Date Range</legend>
+            <div id="analytics-start-date"></div>
+            <div id="analytics-end-date"></div>
+        </fieldset>
+
+        <!-- Compare toggle -->
+        <fieldset>
+            <label for="analytics-compare">
+                <input type="checkbox" id="analytics-compare" name="compare" />
+                Compare against previous year
+            </label>
+        </fieldset>
+
+        <!-- Apply action -->
+        <button id="analytics-apply-button" type="button">
+            Apply
+        </button>
+
+        <!-- Graph placeholder -->
+        <fieldset>
+            <legend>Results</legend>
+            <div id="analytics-graph-placeholder">
+                Graph will render here
+            </div>
+        </fieldset>
+    </fieldset>
+</div>
