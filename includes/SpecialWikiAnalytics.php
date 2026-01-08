@@ -2,6 +2,7 @@
 
 namespace MediaWiki\Extension\WikiAnalytics;
 
+<<<<<<< HEAD
 use MediaWiki\Extension\WikiAnalytics\AnalyticsRangeResolver;
 use MediaWiki\MediaWikiServices;
 use Html;
@@ -193,3 +194,132 @@ class SpecialWikiAnalytics extends SpecialPage {
     //     // more specific data on ind users
     // }
 }
+=======
+use Html;
+use SpecialPage;
+
+class SpecialWikiAnalytics extends SpecialPage {
+
+	public function __construct() {
+		parent::__construct( 'WikiAnalytics' );
+	}
+
+	public function execute( $subPage ) {
+		$this->setHeaders();
+		$out = $this->getOutput();
+
+		$out->setPageTitle( 'Wiki Analytics' );
+
+		// Load JS + CSS (single RL module)
+		$out->addModuleStyles( 'ext.wikiAnalytics' );
+		$out->addModules( [ 'ext.wikiAnalytics' ] );
+
+		// Expose range options to JS
+		$out->addJsConfigVars(
+			'wgWikiAnalyticsRanges',
+			RangeOptions::RANGES
+		);
+
+		// JS mount point — JS owns everything below this
+		$out->addHTML(
+			Html::rawElement(
+				'div',
+				[ 'id' => 'wiki-analytics-root' ],
+				''
+			)
+		);
+	}
+}
+
+
+
+// namespace MediaWiki\Extension\WikiAnalytics;
+
+// use MediaWiki\Extension\WikiAnalytics\AnalyticsRangeResolver;
+// use MediaWiki\Extension\WikiAnalytics\RangeOptions;
+// use Html;
+// use SpecialPage;
+
+// class SpecialWikiAnalytics extends SpecialPage {
+
+//     public function __construct() {
+//         parent::__construct( 'WikiAnalytics' );
+//     }
+
+//     public function execute( $subPage ) {
+//         $this->setHeaders();
+//         $out = $this->getOutput();
+//         $out->setPageTitle( 'Wiki Analytics' );
+
+
+//         // Expose range options to JS
+//         $out->addJsConfigVars(
+//             'wgWikiAnalyticsRanges',
+//             RangeOptions::RANGES
+//         );
+
+//         $request = $this->getRequest();
+//         $format = $request->getVal( 'format', 'html' );
+
+//         $params = [
+//             'scope'      => $request->getVal( 'range', RangeOptions::DEFAULT_RANGE ?? 'last30' ),
+//             'year'       => $request->getInt( 'year' ),
+//             'startYear'  => $request->getInt( 'startYear' ),
+//             'startMonth' => $request->getInt( 'startMonth' ),
+//             'endYear'    => $request->getInt( 'endYear' ),
+//             'endMonth'   => $request->getInt( 'endMonth' ),
+//         ];
+
+//         $resolvedRange = AnalyticsRangeResolver::resolve( $params );
+//         $collector = new MonthlyStatsCollector();
+//         $data = $collector->collect();
+
+//         $payload = [
+//             'range' => $resolvedRange,
+//             'stats' => $data,
+//         ];
+
+//         if ( $format === 'json' ) {
+//             $this->outputJson( $payload );
+//             return;
+//         }
+
+//         $out->addHTML( $this->renderHtml( $payload ) );
+//     }
+
+//     private function outputJson( array $payload ): void {
+//         $out = $this->getOutput();
+//         $out->disable();
+//         header( 'Content-Type: application/json' );
+//         echo json_encode( $payload, JSON_PRETTY_PRINT );
+//     }
+
+//     private function renderHtml( array $payload ): string {
+//         // JS mount point — JS owns the form
+//         $html = Html::rawElement(
+//             'div',
+//             [ 'id' => 'wiki-analytics-root' ],
+//             ''
+//         );
+
+//         $range = $payload['range'];
+
+//         $rangeLabel = sprintf(
+//             '%04d-%02d → %04d-%02d',
+//             $range['startYear'],
+//             $range['startMonth'],
+//             $range['endYear'],
+//             $range['endMonth']
+//         );
+
+//         $html .= Html::element( 'h2', [], 'Wiki Analytics' );
+//         $html .= Html::element( 'p', [], "Range: $rangeLabel" );
+
+//         $html .= '<pre style="max-height:600px;overflow:auto">';
+//         $html .= htmlspecialchars( json_encode( $payload['stats'], JSON_PRETTY_PRINT ) );
+//         $html .= '</pre>';
+
+//         return $html;
+//     }
+// }
+>>>>>>> 4a899f3 (complete SW-211 and SW-126)
