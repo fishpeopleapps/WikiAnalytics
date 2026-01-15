@@ -12,6 +12,9 @@ CREATE TABLE persisted_monthly_analytics (
   file_count INTEGER NOT NULL,
   category_count INTEGER NOT NULL,
   template_count INTEGER NOT NULL,
+  page_views BIGINT NOT NULL,
+  upload_bytes BIGINT NOT NULL,
+  content_bytes BIGINT NOT NULL,
 
   UNIQUE (pma_year, pma_month)
 );

@@ -3,17 +3,31 @@
 namespace MediaWiki\Extension\WikiAnalytics;
 
 use MediaWiki\MediaWikiServices;
-use Wikimedia\Rdbms\IDatabase;
+// use Wikimedia\Rdbms\IDatabase;
+use Wikimedia\Rdbms\Database;
 
 class MonthlyStatsCollector {
 
-    private IDatabase $dbr;
+    private Database $dbr;
+
+    // public function __construct() {
+    //     $this->dbr = MediaWikiServices::getInstance()
+    //         ->getDBLoadBalancer()
+    //         ->getConnection( DB_REPLICA );
+    // }
 
     public function __construct() {
-        $this->dbr = MediaWikiServices::getInstance()
-            ->getDBLoadBalancer()
-            ->getConnection( DB_REPLICA );
+    $db = MediaWikiServices::getInstance()
+        ->getDBLoadBalancer()
+        ->getConnection( DB_REPLICA );
+
+    if ( !$db instanceof Database ) {
+        throw new \RuntimeException( 'Failed to acquire database connection' );
     }
+
+    $this->dbr = $db;
+}
+
 
     /**
      * Collect all core wiki stats
@@ -28,12 +42,11 @@ class MonthlyStatsCollector {
             'file_count'        => $this->getNamespaceCount( NS_FILE ),
             'category_count'    => $this->getNamespaceCount( NS_CATEGORY ),
             'template_count'    => $this->getNamespaceCount( NS_TEMPLATE ),
+            'page_views'        => $this->getPageViews(),
+            'upload_bytes'      => $this->getUploadBytes(),
+            'content_bytes'     => $this->getContentBytes(),
         ];
     }
-
-    /**
-     * --- site_stats based metrics ---
-     */
 
     private function getTotalPages(): int {
         return (int)$this->getSiteStat( 'ss_total_pages' );
@@ -60,9 +73,38 @@ class MonthlyStatsCollector {
         );
     }
 
-    /**
-     * --- Active users (last 30 days) ---
-     */
+    private function getUploadBytes(): int {
+        return (int)$this->dbr->selectField(
+            'image',
+            'SUM(img_size)',
+            [],
+            __METHOD__
+        );
+    }
+
+    private function getContentBytes(): int {
+        return (int)$this->dbr->selectField(
+            'page',
+            'SUM(page_len)',
+            [],
+            __METHOD__
+        );
+    }
+
+
+    private function getPageViews(): int {
+    if ( !$this->dbr->tableExists( 'hit_counter', __METHOD__ ) ) {
+        return 0;
+    }
+
+    return (int)$this->dbr->selectField(
+        'hit_counter',
+        'SUM(page_counter)',
+        [],
+        __METHOD__
+        );
+    }
+
     private function getActiveUserCount(): int {
         $cutoff = $this->dbr->timestamp( time() - 30 * 24 * 60 * 60 );
 
@@ -76,9 +118,6 @@ class MonthlyStatsCollector {
         );
     }
 
-    /**
-     * --- Namespace-based counts ---
-     */
     private function getNamespaceCount( int $namespace ): int {
         return (int)$this->dbr->selectField(
             'page',

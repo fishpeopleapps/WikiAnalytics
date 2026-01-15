@@ -23,11 +23,6 @@
     	"MediaWiki\\Extension\\WikiAnalytics\\": "includes/"
 	},
     "ResourceModules": {
-<<<<<<< HEAD
-		"ext.wikianalytics": {
-			"styles": [
-				"resources/range.css"
-=======
 		"ext.wikiAnalytics": {
 			"styles": [
 				"extensions/WikiAnalytics/resources/flatpickr.min.css",
@@ -39,7 +34,6 @@
 				"extensions/WikiAnalytics/resources/chart.min.js",
 				"extensions/WikiAnalytics/resources/ext.wikiAnalytics.js"
 				
->>>>>>> 4a899f3 (complete SW-211 and SW-126)
 			]
 		}
 	},

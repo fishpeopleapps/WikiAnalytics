@@ -31,8 +31,7 @@ class WikiAnalyticsDBManager {
     }
 
     /**
-     * Insert monthly stats (no overwrite)
-     *
+     * Insert monthly stats 
      * @throws \RuntimeException if month already exists
      */
     public function insertMonthlyStats(
@@ -60,6 +59,9 @@ class WikiAnalyticsDBManager {
             'file_count'        => $stats['file_count'],
             'category_count'    => $stats['category_count'],
             'template_count'    => $stats['template_count'],
+            'page_views'        => $stats['page_views'],
+            'upload_bytes'      => $stats['upload_bytes'],
+            'content_bytes'     => $stats['content_bytes'],
         ];
 
         $this->db->insert(
@@ -111,7 +113,6 @@ class WikiAnalyticsDBManager {
 
     /**
      * Get monthly stats within an optional year/month range
-     *
      * Any parameter may be null to indicate an open range.
      */
     public function getMonthlyStatsInRange(
@@ -176,6 +177,10 @@ class WikiAnalyticsDBManager {
             'file_count'        => (int)$row->file_count,
             'category_count'    => (int)$row->category_count,
             'template_count'    => (int)$row->template_count,
+            'page_views'        => (int)$row->page_views,
+            'upload_bytes'      => (int)$row->upload_bytes,
+            'content_bytes'     => (int)$row->content_bytes,
+
         ];
     }
 
