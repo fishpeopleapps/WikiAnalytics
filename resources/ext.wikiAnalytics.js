@@ -1,6 +1,6 @@
 mw.loader.using( 'ext.wikiAnalytics' ).then( () => {
 
-	let analyticsChart = null;
+	const charts = new Map();
 
 	const analyticsForm = document.createElement( 'div' );
 	analyticsForm.id = 'analytics-form';
@@ -12,7 +12,7 @@ mw.loader.using( 'ext.wikiAnalytics' ).then( () => {
 	legend.textContent = 'Analytics Range';
 	fieldset.appendChild( legend );
 
-	// ---- Range dropdown
+// ---- Range dropdown
 	const rangeLabel = document.createElement( 'label' );
 	rangeLabel.setAttribute( 'for', 'analytics-range' );
 	rangeLabel.textContent = 'Range:';
@@ -35,7 +35,7 @@ mw.loader.using( 'ext.wikiAnalytics' ).then( () => {
     }
 	
 
-	// ---- flatpickr date picker
+// ---- flatpickr date picker
 	const dateFieldset = document.createElement( 'fieldset' );
 	dateFieldset.id = 'analytics-custom-dates';
 	dateFieldset.style.display = 'none'; 
@@ -58,7 +58,7 @@ mw.loader.using( 'ext.wikiAnalytics' ).then( () => {
 
 	fieldset.appendChild( dateFieldset );
 
-	// ---- Compare Checkbox
+// ---- Compare Checkbox
 	const compareFieldset = document.createElement( 'fieldset' );
 
 	const compareLabel = document.createElement( 'label' );
@@ -85,90 +85,103 @@ mw.loader.using( 'ext.wikiAnalytics' ).then( () => {
 
 	fieldset.appendChild( applyButton );
 
-	// ---- Graph placeholder
-	const graphFieldset = document.createElement( 'fieldset' );
-	const graphLegend = document.createElement( 'legend' );
-	graphLegend.textContent = 'Results';
+// ---- Graph placeholder
+	const resultsHeading = document.createElement( 'h3' );
+	resultsHeading.textContent = 'Results';
+	fieldset.appendChild( resultsHeading );
 
-	graphFieldset.appendChild( graphLegend );
+	const graphGrid = document.createElement( 'div' );
+	graphGrid.className = 'analytics-grid';
+	fieldset.appendChild( graphGrid );
 
-	fieldset.appendChild( graphFieldset );
+	const graphs = [];
 
-	const graphCanvas = document.createElement( 'canvas' );
-	graphCanvas.id = 'analytics-chart';
-
-	graphFieldset.appendChild( graphCanvas );
-	function renderChart( labels, data, compareData = null ) {
-	const canvas = document.getElementById( 'analytics-chart' );
-	const ctx = canvas.getContext( '2d' );
-
-	if ( analyticsChart ) {
-		analyticsChart.destroy();
+	for ( let i = 1; i <= 36; i++ ) {
+		const graph = createGraphCard( `Metric ${ i }` );
+		graphGrid.appendChild( graph.fieldset );
+		graphs.push( graph );
 	}
 
-	// Dummy Data to ensure its working
-	const datasets = [
-		{
-			label: 'Page Views',
-			data,
-			borderWidth: 2,
-			tension: 0.3
+
+
+	function renderChart( canvas, labels, data, compareData = null ) {
+		const ctx = canvas.getContext( '2d' );
+
+		// Dummy Data to ensure its working
+		const datasets = [
+			{
+				label: 'Page Views',
+				data,
+				borderWidth: 2,
+				tension: 0.3
+			}
+		];
+		if ( compareData ) {
+			datasets.push( {
+				label: 'Previous Year',
+				data: compareData,
+				borderWidth: 2,
+				borderDash: [ 6, 4 ],
+				tension: 0.3
+			} );
 		}
-	];
+		if ( charts.has( canvas ) ) {
+			charts.get( canvas ).destroy();
+		}
 
-	if ( compareData ) {
-		datasets.push( {
-			label: 'Previous Year',
-			data: compareData,
-			borderWidth: 2,
-			borderDash: [ 6, 4 ],
-			tension: 0.3
-		} );
-	}
-
-	analyticsChart = new Chart( ctx, {
+		const chart = new Chart( ctx, {
 			type: 'line',
-			data: {
-				labels,
-				datasets
-			},
+			data: { labels, datasets },
 			options: {
-				responsive: true,
-				maintainAspectRatio: false,
-				plugins: {
-					legend: {
-						display: true
-					}
-				}
+				responsive: false
 			}
 		} );
+
+		charts.set( canvas, chart );
+
 	}
+
+
 	function generateFakeData( count ) {
 		return Array.from( { length: count }, () =>
 			Math.floor( Math.random() * 200 ) + 50
 		);
 	}
 
-	applyButton.addEventListener( 'click', () => {
-	// Fake labels for now
-	const labels = [
-		'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-		'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-	];
+	function createGraphCard( title ) {
+		const fs = document.createElement( 'fieldset' );
+		fs.className = 'analytics-graph';
 
-	const data = generateFakeData( labels.length );
+		const legend = document.createElement( 'legend' );
+		legend.textContent = title;
 
-	let compareData = null;
-	if ( compareCheckbox.checked ) {
-		compareData = generateFakeData( labels.length );
+		const canvas = document.createElement( 'canvas' );
+		canvas.style.height = '260px';
+
+		fs.appendChild( legend );
+		fs.appendChild( canvas );
+
+		return { fieldset: fs, canvas };
 	}
 
-	renderChart( labels, data, compareData );
-} );
 
+	applyButton.addEventListener( 'click', () => {
+		// Fake labels for now
+		const labels = [
+			'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+			'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+		];
 
+		let compareData = null;
+		if ( compareCheckbox.checked ) {
+			compareData = generateFakeData( labels.length );
+		}
 
-
+		graphs.forEach( graph => {
+			const data = generateFakeData( labels.length );
+			renderChart( graph.canvas, labels, data, compareData );
+		} );
+	} );
 
 	// Avengers Assemble!
 	analyticsForm.appendChild( fieldset );
@@ -176,19 +189,19 @@ mw.loader.using( 'ext.wikiAnalytics' ).then( () => {
 	const content = document.getElementById( 'mw-content-text' );
 
 	if ( heading && heading.parentElement ) {
-		heading.parentElement.after( analyticsForm );
-	} else {
-		content.prepend( analyticsForm );
+			heading.parentElement.after( analyticsForm );
+		} else {
+			content.prepend( analyticsForm );
 	}
 
 
 	// Display the date picker if custom is selected, otherwise hide
 	rangeSelect.addEventListener( 'change', () => {
-	if ( rangeSelect.value === 'custom' ) {
-		dateFieldset.style.display = '';
-	} else {
-		dateFieldset.style.display = 'none';
-	}
+		if ( rangeSelect.value === 'custom' ) {
+			dateFieldset.style.display = '';
+		} else {
+			dateFieldset.style.display = 'none';
+		}
 	} );
 
 	let startPicker;
@@ -233,12 +246,11 @@ mw.loader.using( 'ext.wikiAnalytics' ).then( () => {
 	applyButton.classList.toggle( 'is-disabled', !isValid );
 
 	rangeSelect.addEventListener( 'change', () => {
-	dateFieldset.style.display =
-		( rangeSelect.value === 'custom' ) ? '' : 'none';
+		dateFieldset.style.display =
+			( rangeSelect.value === 'custom' ) ? '' : 'none';
 
-	validateForm();
-} );
-
+		validateForm();
+	} );
 }
 
 

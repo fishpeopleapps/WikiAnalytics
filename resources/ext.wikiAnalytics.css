@@ -87,3 +87,13 @@ label[for="analytics-compare"] {
 
 
 
+.analytics-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 1.5rem;
+    justify-content: start;
+}
+
+.analytics-graph {
+	padding: 1rem;
+}
