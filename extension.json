@@ -10,7 +10,7 @@
 	"requires": {
 		"MediaWiki": ">= 1.43.0",
         "extensions": {
-            "TimedMediaHandler": "0.6.0"
+            "TimedMediaHandler": ">=0.6.0"
         }
 	},
 	"MessagesDirs": {
@@ -18,6 +18,11 @@
 	},
 	"ExtensionMessagesFiles": {
 		"WikiAnalyticsAlias": "i18n/en.alias.php"
+	},
+	"APIModules": {
+		"wikianalytics": {
+			"class": "MediaWiki\\Extension\\WikiAnalytics\\ApiWikiAnalytics"
+		}
 	},
 	"AutoloadNamespaces": {
     	"MediaWiki\\Extension\\WikiAnalytics\\": "includes/"
@@ -37,8 +42,18 @@
 			]
 		}
 	},
+	"Hooks": {
+  		"LoadExtensionSchemaUpdates": "MediaWiki\\Extension\\WikiAnalytics\\Hooks::onLoadExtensionSchemaUpdates"
+	},
 	"schemaUpdates": {
   		"sqlite": [
+			"sql/audio_play_events.sql",
+			"sql/monthly_audio_analytics.sql",
+			"sql/monthly_filetype_breakdown.sql",
+			"sql/monthly_namespace_breakdown.sql",
+			"sql/monthly_top_audio.sql",
+			"sql/monthly_top_pages.sql",
+			"sql/monthly_top_users.sql",
     		"sql/persisted_monthly_analytics.sql"
   		]
 	},

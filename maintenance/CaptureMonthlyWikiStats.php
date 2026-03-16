@@ -48,6 +48,18 @@ class CaptureMonthlyWikiStats extends Maintenance {
 
         $dbManager->insertMonthlyStats( $year, $month, $stats );
 
+        $namespaceMetrics = $collector->collectNamespaceMetrics();
+
+        foreach ( $namespaceMetrics as $metric ) {
+            $dbManager->upsertMonthlyNamespaceMetric(
+                $year,
+                $month,
+                $metric['namespace_id'],
+                $metric['page_count'],
+                $metric['edit_count']
+            );
+        }
+
         $this->output(
             "Monthly wiki analytics captured for {$year}-{$month}\n"
         );

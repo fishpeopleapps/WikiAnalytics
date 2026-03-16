@@ -1,6 +1,80 @@
 mw.loader.using( 'ext.wikiAnalytics' ).then( () => {
 
 	const charts = new Map();
+	const api = new mw.Api();
+	let namespaceChart = null;
+	const METRICS = [
+	{
+		key: 'edit_count',
+		label: 'Edits'
+	},
+	{
+		key: 'article_count',
+		label: 'Articles'
+	},
+	{
+		key: 'user_count',
+		label: 'Total Users'
+	},
+	{
+		key: 'active_user_count',
+		label: 'Active Users'
+	},
+	{
+		key: 'file_count',
+		label: 'Files'
+	},
+	{
+		key: 'page_count',
+		label: 'Pages'
+	},
+	{
+		key: 'category_count',
+		label: 'Categories'
+	},
+	{
+		key: 'template_count',
+		label: 'Templates'
+	},
+	{
+		key: 'page_views',
+		label: 'Page Views'
+	},
+	{
+		key: 'word_count',
+		label: 'Word Count'
+	},
+	{
+		key: 'pages_created',
+		label: 'Pages Created'
+	},
+	{
+		key: 'edits_this_month',
+		label: 'Edits This Month'
+	},
+	{
+		key: 'uploads_this_month',
+		label: 'Uploads This Month'
+	},
+	{
+		key: 'upload_bytes_this_month',
+		label: 'Upload Bytes This Month'
+	},
+	{
+		key: 'new_users',
+		label: 'New Users'
+	},
+	{
+		key: 'returning_users',
+		label: 'Returning Users'
+	},
+	{
+		key: 'active_editors',
+		label: 'Active Editors'
+	}
+];
+
+
 
 	const analyticsForm = document.createElement( 'div' );
 	analyticsForm.id = 'analytics-form';
@@ -34,7 +108,6 @@ mw.loader.using( 'ext.wikiAnalytics' ).then( () => {
         } );
     }
 	
-
 // ---- flatpickr date picker
 	const dateFieldset = document.createElement( 'fieldset' );
 	dateFieldset.id = 'analytics-custom-dates';
@@ -85,7 +158,7 @@ mw.loader.using( 'ext.wikiAnalytics' ).then( () => {
 
 	fieldset.appendChild( applyButton );
 
-// ---- Graph placeholder
+// ---- Graphs
 	const resultsHeading = document.createElement( 'h3' );
 	resultsHeading.textContent = 'Results';
 	fieldset.appendChild( resultsHeading );
@@ -94,15 +167,14 @@ mw.loader.using( 'ext.wikiAnalytics' ).then( () => {
 	graphGrid.className = 'analytics-grid';
 	fieldset.appendChild( graphGrid );
 
-	const graphs = [];
-
-	for ( let i = 1; i <= 36; i++ ) {
-		const graph = createGraphCard( `Metric ${ i }` );
-		graphGrid.appendChild( graph.fieldset );
-		graphs.push( graph );
-	}
-
-
+	const graphs = METRICS.map( metric => {
+	const graph = createGraphCard( metric.label );
+	graphGrid.appendChild( graph.fieldset );
+	return {
+			...graph,
+			metricKey: metric.key
+		};
+	} );
 
 	function renderChart( canvas, labels, data, compareData = null ) {
 		const ctx = canvas.getContext( '2d' );
@@ -133,19 +205,17 @@ mw.loader.using( 'ext.wikiAnalytics' ).then( () => {
 			type: 'line',
 			data: { labels, datasets },
 			options: {
-				responsive: false
+				responsive: false,
+				plugins: {
+					legend: {
+						display: false
+					}
+				}
 			}
 		} );
 
 		charts.set( canvas, chart );
 
-	}
-
-
-	function generateFakeData( count ) {
-		return Array.from( { length: count }, () =>
-			Math.floor( Math.random() * 200 ) + 50
-		);
 	}
 
 	function createGraphCard( title ) {
@@ -164,24 +234,147 @@ mw.loader.using( 'ext.wikiAnalytics' ).then( () => {
 		return { fieldset: fs, canvas };
 	}
 
-
 	applyButton.addEventListener( 'click', () => {
-		// Fake labels for now
-		const labels = [
-			'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-			'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-		];
+		const params = {
+			action: 'wikianalytics',
+			format: 'json'
+		};
 
-		let compareData = null;
-		if ( compareCheckbox.checked ) {
-			compareData = generateFakeData( labels.length );
+		// Map UI range → API scope
+		switch ( rangeSelect.value ) {
+			case 'thisMonth':
+				params.scope = 'current';
+				break;
+			case 'thisYear':
+				params.scope = 'year';
+				params.year = new Date().getFullYear();
+				break;
+			case 'custom':
+				params.scope = 'range';
+				params.startYear = parseInt( startDate.value.slice( 0, 4 ), 10 );
+				params.startMonth = parseInt( startDate.value.slice( 5, 7 ), 10 );
+				params.endYear = parseInt( endDate.value.slice( 0, 4 ), 10 );
+				params.endMonth = parseInt( endDate.value.slice( 5, 7 ), 10 );
+				break;
+			default:
+				params.scope = 'last12';
 		}
 
-		graphs.forEach( graph => {
-			const data = generateFakeData( labels.length );
-			renderChart( graph.canvas, labels, data, compareData );
+		api.get( params ).then( response => {
+			const data = response.wikianalytics;
+
+			const labels = data.months.map(
+				m => `${ m.year }-${ String( m.month ).padStart( 2, '0' ) }`
+			);
+
+			graphs.forEach( graph => {
+				const values = data.months.map(
+					m => m[ graph.metricKey ] ?? 0
+				);
+
+				renderChart(
+					graph.canvas,
+					labels,
+					values
+				);
+			} ); // ends graphs.forEach
+
+			// for namespace display
+			const namespaceData = data.namespaces.filter( row => {
+				return data.months.some(
+					m => m.year === row.year && m.month === row.month
+				);
+			} );
+
+			if ( namespaceData && namespaceData.length ) {
+
+				const namespaceMap = new Map();
+
+				namespaceData.forEach( row => {
+					const key = row.namespace_id;
+
+					if ( !namespaceMap.has( key ) ) {
+						if ( !namespaceMap.has( key ) ) {
+							namespaceMap.set( key, {
+								namespace_id: key,
+								page_count: 0,
+								edit_count: 0
+							} );
+						}
+
+						const ns = namespaceMap.get( key );
+						ns.page_count += row.page_count;
+						ns.edit_count += row.edit_count;
+					}
+				} );
+
+				const labels = [];
+				const pageCounts = [];
+				const editCounts = [];
+
+				const sortedNamespaces = Array.from( namespaceMap.values() )
+				// 6 is file pages which I don't think should be included here
+					.filter( ns =>
+						ns.namespace_id !== 6 &&
+						( ns.page_count > 0 || ns.edit_count > 0 )
+					)
+					.sort( ( a, b ) => b.page_count - a.page_count );
+
+				sortedNamespaces.slice( 0, 10 ).forEach( ns => {
+					// use the human name vs the number code
+					// this was showing correct names for everything except main which was showing as 0
+					// labels.push( mw.config.get( 'wgFormattedNamespaces' )[ ns.namespace_id ] || `NS ${ns.namespace_id}` );
+					const nsName = mw.config.get( 'wgFormattedNamespaces' )[ ns.namespace_id ];
+					labels.push( nsName || 'Main' );
+					pageCounts.push( ns.page_count );
+					editCounts.push( ns.edit_count );
+				} );
+
+				const namespaceGraph = createGraphCard( 'Namespace Breakdown' );
+				graphGrid.appendChild( namespaceGraph.fieldset );
+
+				const namespaceCanvas = namespaceGraph.canvas;
+
+				if ( namespaceChart ) {
+					namespaceChart.destroy();
+				}
+
+				namespaceChart = new Chart( namespaceCanvas.getContext( '2d' ), {
+					type: 'bar',
+					data: {
+						labels,
+						datasets: [
+							{
+								label: 'Pages',
+								data: pageCounts,
+								backgroundColor: '#4e79a7'
+							},
+							{
+								label: 'Edits',
+								data: editCounts,
+								backgroundColor: '#8ecae6'
+							}
+						]
+					},
+					options: {
+						indexAxis: 'y',
+						responsive: true,
+						maintainAspectRatio: false,
+						plugins: {
+							legend: {
+								display: true
+							}
+						}
+					}
+				} );
+
+			}
+
 		} );
 	} );
+
+	applyButton.click();
+
 
 	// Avengers Assemble!
 	analyticsForm.appendChild( fieldset );
@@ -252,18 +445,5 @@ mw.loader.using( 'ext.wikiAnalytics' ).then( () => {
 		validateForm();
 	} );
 }
-
-
-
-//         if ( typeof flatpickr !== 'undefined' ) {
-//     flatpickr( '#analytics-start-date', {
-//         dateFormat: 'Y-m-d'
-//     } );
-
-//     flatpickr( '#analytics-end-date', {
-//         dateFormat: 'Y-m-d'
-//     } );
-// }
-
 
 } );

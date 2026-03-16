@@ -40,7 +40,11 @@ class TestWikiAnalyticsRead extends Maintenance {
                     $row['article_count'],
                     $row['edit_count'],
                     $row['user_count'],
-                    $row['active_user_count']
+                    $row['active_user_count'],
+                    $row['word_count'],
+                    $row['pages_created'],
+                    $row['edits_this_month'],
+                    $row['uploads_this_month']
                 )
             );
         }

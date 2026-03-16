@@ -3,30 +3,31 @@
 namespace MediaWiki\Extension\WikiAnalytics;
 
 use MediaWiki\MediaWikiServices;
-// use Wikimedia\Rdbms\IDatabase;
-use Wikimedia\Rdbms\Database;
+use Wikimedia\Rdbms\IDatabase;
+// use Wikimedia\Rdbms\Database;
 
 class MonthlyStatsCollector {
 
-    private Database $dbr;
-
-    // public function __construct() {
-    //     $this->dbr = MediaWikiServices::getInstance()
-    //         ->getDBLoadBalancer()
-    //         ->getConnection( DB_REPLICA );
-    // }
+    // private Database $dbr;
+    private IDatabase $dbr;
 
     public function __construct() {
-    $db = MediaWikiServices::getInstance()
-        ->getDBLoadBalancer()
-        ->getConnection( DB_REPLICA );
-
-    if ( !$db instanceof Database ) {
-        throw new \RuntimeException( 'Failed to acquire database connection' );
+        $this->dbr = MediaWikiServices::getInstance()
+            ->getDBLoadBalancer()
+            ->getConnection( DB_REPLICA );
     }
 
-    $this->dbr = $db;
-}
+//     public function __construct() {
+//     $db = MediaWikiServices::getInstance()
+//         ->getDBLoadBalancer()
+//         ->getConnection( DB_REPLICA );
+
+//     if ( !$db instanceof Database ) {
+//         throw new \RuntimeException( 'Failed to acquire database connection' );
+//     }
+
+//     $this->dbr = $db;
+// }
 
 
     /**
@@ -45,6 +46,16 @@ class MonthlyStatsCollector {
             'page_views'        => $this->getPageViews(),
             'upload_bytes'      => $this->getUploadBytes(),
             'content_bytes'     => $this->getContentBytes(),
+            'word_count'        => $this->getWordCount(),
+
+            'pages_created'     => $this->getPagesCreatedThisMonth(),
+            'edits_this_month'  => $this->getEditsThisMonth(),
+            'uploads_this_month'=> $this->getUploadsThisMonth(),
+            'upload_bytes_this_month' => $this->getUploadBytesThisMonth(),
+
+            'new_users'         => $this->getNewUsersThisMonth(),
+            'returning_users'   => $this->getReturningUsersThisMonth(),
+            'active_editors'    => $this->getActiveEditorsThisMonth(),
         ];
     }
 
@@ -93,15 +104,14 @@ class MonthlyStatsCollector {
 
 
     private function getPageViews(): int {
-    if ( !$this->dbr->tableExists( 'hit_counter', __METHOD__ ) ) {
-        return 0;
-    }
-
-    return (int)$this->dbr->selectField(
-        'hit_counter',
-        'SUM(page_counter)',
-        [],
-        __METHOD__
+        if ( !$this->dbr->tableExists( 'hit_counter', __METHOD__ ) ) {
+            return 0;
+        }
+        return (int)$this->dbr->selectField(
+            'hit_counter',
+            'SUM(page_counter)',
+            [],
+            __METHOD__
         );
     }
 
@@ -128,6 +138,70 @@ class MonthlyStatsCollector {
             ],
             __METHOD__
         );
+    }
+
+    private function getWordCount() {
+        // do something
+        return 0;
+    }
+    private function getPagesCreatedThisMonth() {
+        // do something
+        return 0;
+    }
+    private function getEditsThisMonth() {
+        // do something
+        return 0;
+    }
+    private function getUploadsThisMonth() {
+        // do something
+        return 0;
+    }
+    private function getUploadBytesThisMonth() {
+        // do something
+        return 0;
+    }
+    private function getNewUsersThisMonth() {
+        // do something
+        return 0;
+    }
+    private function getReturningUsersThisMonth() {
+        // do something
+        return 0;
+    }
+    private function getActiveEditorsThisMonth() {
+        // do something
+        return 0;
+    }
+
+    public function collectNamespaceMetrics(): array {
+
+        $res = $this->dbr->select(
+            [ 'page', 'revision' ],
+            [
+                'namespace_id' => 'page_namespace',
+                'page_count' => 'COUNT(DISTINCT page_id)',
+                'edit_count' => 'COUNT(rev_id)'
+            ],
+            [
+                'rev_page = page_id'
+            ],
+            __METHOD__,
+            [
+                'GROUP BY' => 'page_namespace'
+            ]
+        );
+
+        $rows = [];
+
+        foreach ( $res as $row ) {
+            $rows[] = [
+                'namespace_id' => (int)$row->namespace_id,
+                'page_count' => (int)$row->page_count,
+                'edit_count' => (int)$row->edit_count
+            ];
+        }
+
+        return $rows;
     }
 }
 
