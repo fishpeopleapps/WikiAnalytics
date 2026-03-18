@@ -21,12 +21,10 @@ class CaptureMonthlyWikiStats extends Maintenance {
     }
 
     public function execute() {
-        $year  = (int)date( 'Y' );
-        $month = (int)date( 'n' );
-
+        $year      = (int)date( 'Y' );
+        $month     = (int)date( 'n' );
         $collector = new MonthlyStatsCollector();
         $stats     = $collector->collect();
-
         $dbManager = new WikiAnalyticsDBManager();
 
         if ( $dbManager->monthExists( $year, $month ) ) {
@@ -36,12 +34,10 @@ class CaptureMonthlyWikiStats extends Maintenance {
                     "Use --force to overwrite."
                 );
             }
-
             // Future-safe: explicit overwrite path
             $this->output(
                 "Overwriting existing monthly analytics for {$year}-{$month}\n"
             );
-
             // For now: delete + reinsert (explicit, auditable)
             $dbManager->deleteMonthlyStats( $year, $month );
         }
@@ -49,7 +45,6 @@ class CaptureMonthlyWikiStats extends Maintenance {
         $dbManager->insertMonthlyStats( $year, $month, $stats );
 
         $namespaceMetrics = $collector->collectNamespaceMetrics();
-
         foreach ( $namespaceMetrics as $metric ) {
             $dbManager->upsertMonthlyNamespaceMetric(
                 $year,
@@ -57,6 +52,17 @@ class CaptureMonthlyWikiStats extends Maintenance {
                 $metric['namespace_id'],
                 $metric['page_count'],
                 $metric['edit_count']
+            );
+        }
+
+        $filetypeMetrics = $collector->collectFiletypeMetrics();
+        foreach ( $filetypeMetrics as $metric ) {
+            $dbManager->upsertMonthlyFiletypeMetric(
+                $year,
+                $month,
+                $metric['file_type'],
+                $metric['upload_count'],
+                $metric['total_bytes']
             );
         }
 

@@ -203,5 +203,59 @@ class MonthlyStatsCollector {
 
         return $rows;
     }
+
+    public function collectFiletypeMetrics(): array {
+        $res = $this->dbr->select(
+            'image',
+            [
+                'file_type' => "
+                    CASE
+                        WHEN LOWER(substr(img_name, instr(img_name, '.') + 1)) IN ('gif','jpg','jpeg','png','svg')
+                            THEN 'image'
+                        WHEN LOWER(substr(img_name, instr(img_name, '.') + 1)) IN ('pdf','doc','docx','txt','ppt','pptx')
+                            THEN 'document'
+                        WHEN LOWER(substr(img_name, instr(img_name, '.') + 1)) = 'mp3'
+                            THEN 'audio'
+                        WHEN LOWER(substr(img_name, instr(img_name, '.') + 1)) = 'mp4'
+                            THEN 'video'
+                        ELSE 'other'
+                    END
+                ",   
+                ######### MYSQL
+                // 'file_type' => "
+                //     CASE
+                //         WHEN LOWER(SUBSTRING_INDEX(img_name, '.', -1)) IN ('gif','jpg','jpeg','png','svg')
+                //             THEN 'image'
+                //         WHEN LOWER(SUBSTRING_INDEX(img_name, '.', -1)) IN ('pdf','doc','docx','txt','ppt','pptx')
+                //             THEN 'document'
+                //         WHEN LOWER(SUBSTRING_INDEX(img_name, '.', -1)) = 'mp3'
+                //             THEN 'audio'
+                //         WHEN LOWER(SUBSTRING_INDEX(img_name, '.', -1)) = 'mp4'
+                //             THEN 'video'
+                //         ELSE 'other'
+                //     END
+                // ",
+                'upload_count' => 'COUNT(*)',
+                'total_bytes'  => 'SUM(img_size)'
+            ],
+            [],
+            __METHOD__,
+            [
+                'GROUP BY' => 'file_type'
+            ]
+        );
+
+        $rows = [];
+
+        foreach ( $res as $row ) {
+            $rows[] = [
+                'file_type'    => $row->file_type,
+                'upload_count' => (int)$row->upload_count,
+                'total_bytes'  => (int)$row->total_bytes
+            ];
+        }
+
+        return $rows;
+    }
 }
 

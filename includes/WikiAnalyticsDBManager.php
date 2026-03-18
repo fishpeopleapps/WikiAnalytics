@@ -256,7 +256,6 @@ class WikiAnalyticsDBManager {
 }
 
 public function getMonthlyNamespaceBreakdown(): array {
-
     $res = $this->db->select(
         'monthly_namespace_breakdown',
         '*',
@@ -266,7 +265,6 @@ public function getMonthlyNamespaceBreakdown(): array {
             'ORDER BY' => 'mnb_year ASC, mnb_month ASC, namespace_id ASC'
         ]
     );
-
     $rows = [];
 
     foreach ( $res as $row ) {
@@ -278,9 +276,10 @@ public function getMonthlyNamespaceBreakdown(): array {
             'edit_count' => (int)$row->edit_count
         ];
     }
-
     return $rows;
 }
+
+
 
 public function getMonthlyTopAudio(): array {
 
@@ -366,31 +365,54 @@ public function getMonthlyTopUsers(): array {
     return $rows;
 }
 
-public function upsertMonthlyNamespaceMetric(
-    int $year,
-    int $month,
-    int $namespaceId,
-    int $pageCount,
-    int $editCount
-): void {
+    public function upsertMonthlyNamespaceMetric(
+        int $year,
+        int $month,
+        int $namespaceId,
+        int $pageCount,
+        int $editCount
+    ): void {
+        $this->db->upsert(
+            'monthly_namespace_breakdown',
+            [
+                'mnb_year' => $year,
+                'mnb_month' => $month,
+                'namespace_id' => $namespaceId,
+                'page_count' => $pageCount,
+                'edit_count' => $editCount
+            ],
+            [ [ 'mnb_year', 'mnb_month', 'namespace_id' ] ],
+            [
+                'page_count' => $pageCount,
+                'edit_count' => $editCount
+            ],
+            __METHOD__
+        );
+    }
 
-    $this->db->upsert(
-        'monthly_namespace_breakdown',
-        [
-            'mnb_year' => $year,
-            'mnb_month' => $month,
-            'namespace_id' => $namespaceId,
-            'page_count' => $pageCount,
-            'edit_count' => $editCount
-        ],
-        [ [ 'mnb_year', 'mnb_month', 'namespace_id' ] ],
-        [
-            'page_count' => $pageCount,
-            'edit_count' => $editCount
-        ],
-        __METHOD__
-    );
-}
+    public function upsertMonthlyFiletypeMetric(
+        int $year,
+        int $month,
+        string $fileType,
+        int $uploadCount,
+        int $totalBytes
+    ): void {
+        $this->db->upsert(
+            'monthly_filetype_breakdown',
+            [
+                'mfb_year'      => $year,
+                'mfb_month'     => $month,
+                'file_type'     => $fileType,
+                'upload_count'  => $uploadCount,
+                'total_bytes'   => $totalBytes
+            ],
+            [ [ 'mfb_year', 'mfb_month', 'file_type' ] ],
+            [
+                'upload_count' => $uploadCount,
+                'total_bytes'  => $totalBytes
+            ]
+        );
+    }
 
     /**
      * ==============================

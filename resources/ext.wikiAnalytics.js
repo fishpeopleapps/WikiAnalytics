@@ -3,6 +3,7 @@ mw.loader.using( 'ext.wikiAnalytics' ).then( () => {
 	const charts = new Map();
 	const api = new mw.Api();
 	let namespaceChart = null;
+	let filetypeChart = null;
 	const METRICS = [
 	{
 		key: 'edit_count',
@@ -234,6 +235,137 @@ mw.loader.using( 'ext.wikiAnalytics' ).then( () => {
 		return { fieldset: fs, canvas };
 	}
 
+	function renderFiletypeChart( graphGrid, filetypeData ) {
+		if ( !filetypeData || !filetypeData.length ) {
+			return;
+		}
+
+		const labels = [];
+		const uploadCounts = [];
+
+		filetypeData.forEach( row => {
+			labels.push( row.file_type );
+			uploadCounts.push( row.upload_count );
+		} );
+
+		if ( !renderFiletypeChart.chartRef ) {
+			const graph = createGraphCard( 'File Type Breakdown' );
+			graphGrid.appendChild( graph.fieldset );
+			renderFiletypeChart.chartRef = graph.canvas;
+		}
+
+		if ( renderFiletypeChart.chartRef.instance ) {
+			renderFiletypeChart.chartRef.instance.destroy();
+		}
+
+		renderFiletypeChart.chartRef.instance = new Chart(
+			renderFiletypeChart.chartRef.getContext( '2d' ),
+			{
+				type: 'bar',
+				data: {
+					labels,
+					datasets: [
+						{
+							label: 'Uploads',
+							data: uploadCounts,
+							backgroundColor: '#15856d'
+						}
+					]
+				},
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					plugins: {
+						legend: { display: true }
+					}
+				}
+			}
+		);
+	}
+
+	function renderNamespaceChart( graphGrid, namespaceData, months ) {
+
+    if ( !namespaceData || !namespaceData.length ) {
+        return;
+    }
+
+    const namespaceMap = new Map();
+
+    namespaceData.forEach( row => {
+        const key = row.namespace_id;
+
+        if ( !namespaceMap.has( key ) ) {
+            namespaceMap.set( key, {
+                namespace_id: key,
+                page_count: 0,
+                edit_count: 0
+            } );
+        }
+
+        const ns = namespaceMap.get( key );
+        ns.page_count += row.page_count;
+        ns.edit_count += row.edit_count;
+    } );
+
+    const labels = [];
+    const pageCounts = [];
+    const editCounts = [];
+
+    const sortedNamespaces = Array.from( namespaceMap.values() )
+        .filter( ns =>
+            ns.namespace_id !== 6 &&
+            ( ns.page_count > 0 || ns.edit_count > 0 )
+        )
+        .sort( ( a, b ) => b.page_count - a.page_count );
+
+    sortedNamespaces.slice( 0, 10 ).forEach( ns => {
+        const nsName = mw.config.get( 'wgFormattedNamespaces' )[ ns.namespace_id ];
+        labels.push( nsName || 'Main' );
+        pageCounts.push( ns.page_count );
+        editCounts.push( ns.edit_count );
+    } );
+
+    if ( !renderNamespaceChart.chartRef ) {
+        const graph = createGraphCard( 'Namespace Breakdown' );
+        graphGrid.appendChild( graph.fieldset );
+        renderNamespaceChart.chartRef = graph.canvas;
+    }
+
+    if ( renderNamespaceChart.chartRef.instance ) {
+        renderNamespaceChart.chartRef.instance.destroy();
+    }
+
+    renderNamespaceChart.chartRef.instance = new Chart(
+        renderNamespaceChart.chartRef.getContext( '2d' ),
+        {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: 'Pages',
+                        data: pageCounts,
+                        backgroundColor: '#4e79a7'
+                    },
+                    {
+                        label: 'Edits',
+                        data: editCounts,
+                        backgroundColor: '#8ecae6'
+                    }
+                ]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: true }
+                }
+            }
+        }
+    );
+}
+
 	applyButton.addEventListener( 'click', () => {
 		const params = {
 			action: 'wikianalytics',
@@ -278,97 +410,15 @@ mw.loader.using( 'ext.wikiAnalytics' ).then( () => {
 					values
 				);
 			} ); // ends graphs.forEach
-
-			// for namespace display
 			const namespaceData = data.namespaces.filter( row => {
 				return data.months.some(
 					m => m.year === row.year && m.month === row.month
 				);
 			} );
 
-			if ( namespaceData && namespaceData.length ) {
-
-				const namespaceMap = new Map();
-
-				namespaceData.forEach( row => {
-					const key = row.namespace_id;
-
-					if ( !namespaceMap.has( key ) ) {
-						if ( !namespaceMap.has( key ) ) {
-							namespaceMap.set( key, {
-								namespace_id: key,
-								page_count: 0,
-								edit_count: 0
-							} );
-						}
-
-						const ns = namespaceMap.get( key );
-						ns.page_count += row.page_count;
-						ns.edit_count += row.edit_count;
-					}
-				} );
-
-				const labels = [];
-				const pageCounts = [];
-				const editCounts = [];
-
-				const sortedNamespaces = Array.from( namespaceMap.values() )
-				// 6 is file pages which I don't think should be included here
-					.filter( ns =>
-						ns.namespace_id !== 6 &&
-						( ns.page_count > 0 || ns.edit_count > 0 )
-					)
-					.sort( ( a, b ) => b.page_count - a.page_count );
-
-				sortedNamespaces.slice( 0, 10 ).forEach( ns => {
-					// use the human name vs the number code
-					// this was showing correct names for everything except main which was showing as 0
-					// labels.push( mw.config.get( 'wgFormattedNamespaces' )[ ns.namespace_id ] || `NS ${ns.namespace_id}` );
-					const nsName = mw.config.get( 'wgFormattedNamespaces' )[ ns.namespace_id ];
-					labels.push( nsName || 'Main' );
-					pageCounts.push( ns.page_count );
-					editCounts.push( ns.edit_count );
-				} );
-
-				const namespaceGraph = createGraphCard( 'Namespace Breakdown' );
-				graphGrid.appendChild( namespaceGraph.fieldset );
-
-				const namespaceCanvas = namespaceGraph.canvas;
-
-				if ( namespaceChart ) {
-					namespaceChart.destroy();
-				}
-
-				namespaceChart = new Chart( namespaceCanvas.getContext( '2d' ), {
-					type: 'bar',
-					data: {
-						labels,
-						datasets: [
-							{
-								label: 'Pages',
-								data: pageCounts,
-								backgroundColor: '#4e79a7'
-							},
-							{
-								label: 'Edits',
-								data: editCounts,
-								backgroundColor: '#8ecae6'
-							}
-						]
-					},
-					options: {
-						indexAxis: 'y',
-						responsive: true,
-						maintainAspectRatio: false,
-						plugins: {
-							legend: {
-								display: true
-							}
-						}
-					}
-				} );
-
-			}
+renderNamespaceChart( graphGrid, namespaceData, data.months );
+			
+			renderFiletypeChart( graphGrid, data.filetypes );
 
 		} );
 	} );

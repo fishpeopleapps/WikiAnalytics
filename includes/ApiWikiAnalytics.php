@@ -23,6 +23,7 @@ class ApiWikiAnalytics extends ApiBase {
 		);
 
 		$namespaceBreakdown = $dbManager->getMonthlyNamespaceBreakdown();
+		$filetypeBreakdown = $dbManager->getMonthlyFiletypeBreakdown();
 
 		// Compute totals (simple and explicit on purpose)
 		$totals = $this->calculateTotals( $rows );
@@ -32,6 +33,7 @@ class ApiWikiAnalytics extends ApiBase {
 			'months' => $rows,
 			'totals' => $totals,
 			'namespaces' => $namespaceBreakdown,
+			'filetypes' => $filetypeBreakdown,
 		];
 
 		$this->getResult()->addValue(
