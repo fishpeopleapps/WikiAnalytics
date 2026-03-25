@@ -66,6 +66,31 @@ class CaptureMonthlyWikiStats extends Maintenance {
             );
         }
 
+        $topPages = $collector->collectTopPages( $year, $month, 10 );
+        foreach ( $topPages as $row ) {
+            $dbManager->insertMonthlyTopPage(
+                $year,
+                $month,
+                $row['page_id'],
+                $row['page_title'],
+                $row['edit_count'],
+                $row['rank']
+            );
+        }
+
+        // Top Users
+        $topUsers = $collector->collectTopUsers( $year, $month, 10 );
+        foreach ( $topUsers as $row ) {
+            $dbManager->insertMonthlyTopUser(
+                $year,
+                $month,
+                $row['user_id'],
+                $row['user_name'],
+                $row['edit_count'],
+                $row['rank']
+            );
+        }
+
         $this->output(
             "Monthly wiki analytics captured for {$year}-{$month}\n"
         );

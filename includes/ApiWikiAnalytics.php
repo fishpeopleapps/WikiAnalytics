@@ -22,8 +22,24 @@ class ApiWikiAnalytics extends ApiBase {
 			$range['endMonth']
 		);
 
+		// I'll need to fix these two if I want a per month or range option 
+		// (which also means fiving the WikiAnalyticsDBManager - adding additional methods for them)
 		$namespaceBreakdown = $dbManager->getMonthlyNamespaceBreakdown();
 		$filetypeBreakdown = $dbManager->getMonthlyFiletypeBreakdown();
+		
+		$monthlyTopPages = $dbManager->getMonthlyTopPagesInRange(
+			$range['startYear'],
+			$range['startMonth'],
+			$range['endYear'],
+			$range['endMonth']
+		);
+
+		$monthlyTopUsers = $dbManager->getMonthlyTopUsersInRange(
+			$range['startYear'],
+			$range['startMonth'],
+			$range['endYear'],
+			$range['endMonth']
+		);
 
 		// Compute totals (simple and explicit on purpose)
 		$totals = $this->calculateTotals( $rows );
@@ -34,6 +50,8 @@ class ApiWikiAnalytics extends ApiBase {
 			'totals' => $totals,
 			'namespaces' => $namespaceBreakdown,
 			'filetypes' => $filetypeBreakdown,
+			'top_pages' => $monthlyTopPages,
+			'top_users' => $monthlyTopUsers,
 		];
 
 		$this->getResult()->addValue(

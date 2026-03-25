@@ -21,4 +21,4 @@ CREATE TABLE monthly_top_users (
   PRIMARY KEY (mtu_year, mtu_month, rank)
 );
 
-CREATE INDEX mtu_user_idx ON monthly_top_users (user_id);
+CREATE INDEX mtu_month_idx ON monthly_top_users (mtu_year, mtu_month);

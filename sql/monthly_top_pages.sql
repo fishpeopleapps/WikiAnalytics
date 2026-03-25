@@ -21,4 +21,4 @@ CREATE TABLE monthly_top_pages (
   PRIMARY KEY (mtp_year, mtp_month, rank)
 );
 
-CREATE INDEX mtp_page_idx on monthly_top_pages (page_id);
+CREATE INDEX mtp_month_idx ON monthly_top_pages (mtp_year, mtp_month);

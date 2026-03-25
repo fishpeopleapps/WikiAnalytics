@@ -282,89 +282,163 @@ mw.loader.using( 'ext.wikiAnalytics' ).then( () => {
 			}
 		);
 	}
+	function renderTopPagesTable( graphGrid, topPages, months ) {
+		if ( !topPages || !topPages.length ) return;
 
-	function renderNamespaceChart( graphGrid, namespaceData, months ) {
+		const latest = months[ months.length - 1 ];
 
-    if ( !namespaceData || !namespaceData.length ) {
-        return;
-    }
+		// const filtered = topPages.filter( row =>
+		// 	row.year === latest.year && row.month === latest.month
+		// );
+		const filtered = topPages;
 
-    const namespaceMap = new Map();
+		const existing = document.getElementById( 'top-pages-table' );
+		if ( existing ) {
+			existing.remove();
+		}
+		const fs = document.createElement( 'fieldset' );
+		fs.id = 'top-pages-table';
+		const legend = document.createElement( 'legend' );
+		legend.textContent = 'Top Pages';
+		fs.appendChild( legend );
 
-    namespaceData.forEach( row => {
-        const key = row.namespace_id;
+		const table = document.createElement( 'table' );
 
-        if ( !namespaceMap.has( key ) ) {
-            namespaceMap.set( key, {
-                namespace_id: key,
-                page_count: 0,
-                edit_count: 0
-            } );
-        }
+		filtered.forEach( row => {
+			const tr = document.createElement( 'tr' );
 
-        const ns = namespaceMap.get( key );
-        ns.page_count += row.page_count;
-        ns.edit_count += row.edit_count;
-    } );
+			tr.innerHTML = `
+				<td>${ row.rank }</td>
+				<td>${ row.page_title }</td>
+				<td>${ row.edit_count }</td>
+			`;
 
-    const labels = [];
-    const pageCounts = [];
-    const editCounts = [];
+			table.appendChild( tr );
+		} );
 
-    const sortedNamespaces = Array.from( namespaceMap.values() )
-        .filter( ns =>
-            ns.namespace_id !== 6 &&
-            ( ns.page_count > 0 || ns.edit_count > 0 )
-        )
-        .sort( ( a, b ) => b.page_count - a.page_count );
+		fs.appendChild( table );
+		graphGrid.appendChild( fs );
+	}
+function renderTopUsersTable( graphGrid, topUsers, months ) {
+	if ( !topUsers || !topUsers.length ) return;
+	const existing = document.getElementById( 'top-users-table' );
+	if ( existing ) {
+		existing.remove();
+	}
 
-    sortedNamespaces.slice( 0, 10 ).forEach( ns => {
-        const nsName = mw.config.get( 'wgFormattedNamespaces' )[ ns.namespace_id ];
-        labels.push( nsName || 'Main' );
-        pageCounts.push( ns.page_count );
-        editCounts.push( ns.edit_count );
-    } );
+	const latest = months[ months.length - 1 ];
 
-    if ( !renderNamespaceChart.chartRef ) {
-        const graph = createGraphCard( 'Namespace Breakdown' );
-        graphGrid.appendChild( graph.fieldset );
-        renderNamespaceChart.chartRef = graph.canvas;
-    }
+	// const filtered = topUsers.filter( row =>
+	// 	row.year === latest.year && row.month === latest.month
+	// );
+	const filtered = topUsers;
 
-    if ( renderNamespaceChart.chartRef.instance ) {
-        renderNamespaceChart.chartRef.instance.destroy();
-    }
+	const fs = document.createElement( 'fieldset' );
+	fs.id = 'top-users-table';
+	const legend = document.createElement( 'legend' );
+	legend.textContent = 'Top Users';
+	fs.appendChild( legend );
 
-    renderNamespaceChart.chartRef.instance = new Chart(
-        renderNamespaceChart.chartRef.getContext( '2d' ),
-        {
-            type: 'bar',
-            data: {
-                labels,
-                datasets: [
-                    {
-                        label: 'Pages',
-                        data: pageCounts,
-                        backgroundColor: '#4e79a7'
-                    },
-                    {
-                        label: 'Edits',
-                        data: editCounts,
-                        backgroundColor: '#8ecae6'
-                    }
-                ]
-            },
-            options: {
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: true }
-                }
-            }
-        }
-    );
+	const table = document.createElement( 'table' );
+
+	filtered.forEach( row => {
+		const tr = document.createElement( 'tr' );
+
+		tr.innerHTML = `
+			<td>${ row.rank }</td>
+			<td>${ row.user_name }</td>
+			<td>${ row.edit_count }</td>
+		`;
+
+		table.appendChild( tr );
+	} );
+
+	fs.appendChild( table );
+	graphGrid.appendChild( fs );
 }
+
+	// for name spaces
+	function renderNamespaceChart( graphGrid, namespaceData, months ) {
+		if ( !namespaceData || !namespaceData.length ) {
+			return;
+		}
+
+		const namespaceMap = new Map();
+
+		namespaceData.forEach( row => {
+			const key = row.namespace_id;
+
+			if ( !namespaceMap.has( key ) ) {
+				namespaceMap.set( key, {
+					namespace_id: key,
+					page_count: 0,
+					edit_count: 0
+				} );
+			}
+
+			const ns = namespaceMap.get( key );
+			ns.page_count += row.page_count;
+			ns.edit_count += row.edit_count;
+		} );
+
+		const labels = [];
+		const pageCounts = [];
+		const editCounts = [];
+
+		const sortedNamespaces = Array.from( namespaceMap.values() )
+			.filter( ns =>
+				ns.namespace_id !== 6 &&
+				( ns.page_count > 0 || ns.edit_count > 0 )
+			)
+			.sort( ( a, b ) => b.page_count - a.page_count );
+
+		sortedNamespaces.slice( 0, 10 ).forEach( ns => {
+			const nsName = mw.config.get( 'wgFormattedNamespaces' )[ ns.namespace_id ];
+			labels.push( nsName || 'Main' );
+			pageCounts.push( ns.page_count );
+			editCounts.push( ns.edit_count );
+		} );
+
+		if ( !renderNamespaceChart.chartRef ) {
+			const graph = createGraphCard( 'Namespace Breakdown' );
+			graphGrid.appendChild( graph.fieldset );
+			renderNamespaceChart.chartRef = graph.canvas;
+		}
+
+		if ( renderNamespaceChart.chartRef.instance ) {
+			renderNamespaceChart.chartRef.instance.destroy();
+		}
+
+		renderNamespaceChart.chartRef.instance = new Chart(
+			renderNamespaceChart.chartRef.getContext( '2d' ),
+			{
+				type: 'bar',
+				data: {
+					labels,
+					datasets: [
+						{
+							label: 'Pages',
+							data: pageCounts,
+							backgroundColor: '#4e79a7'
+						},
+						{
+							label: 'Edits',
+							data: editCounts,
+							backgroundColor: '#8ecae6'
+						}
+					]
+				},
+				options: {
+					indexAxis: 'y',
+					responsive: true,
+					maintainAspectRatio: false,
+					plugins: {
+						legend: { display: true }
+					}
+				}
+			}
+		);
+	}
 
 	applyButton.addEventListener( 'click', () => {
 		const params = {
@@ -416,9 +490,10 @@ mw.loader.using( 'ext.wikiAnalytics' ).then( () => {
 				);
 			} );
 
-renderNamespaceChart( graphGrid, namespaceData, data.months );
-			
+			renderNamespaceChart( graphGrid, namespaceData, data.months );
 			renderFiletypeChart( graphGrid, data.filetypes );
+			renderTopPagesTable( graphGrid, data.top_pages, data.months );
+			renderTopUsersTable( graphGrid, data.top_users, data.months );
 
 		} );
 	} );

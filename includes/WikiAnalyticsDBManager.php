@@ -337,6 +337,59 @@ public function getMonthlyTopPages(): array {
     return $rows;
 }
 
+public function getMonthlyTopPagesInRange(
+    ?int $startYear,
+    ?int $startMonth,
+    ?int $endYear,
+    ?int $endMonth
+): array {
+
+    $conds = [];
+
+    if ( $startYear !== null && $startMonth !== null ) {
+        $conds[] = sprintf(
+            '(mtp_year > %d OR (mtp_year = %d AND mtp_month >= %d))',
+            $startYear,
+            $startYear,
+            $startMonth
+        );
+    }
+
+    if ( $endYear !== null && $endMonth !== null ) {
+        $conds[] = sprintf(
+            '(mtp_year < %d OR (mtp_year = %d AND mtp_month <= %d))',
+            $endYear,
+            $endYear,
+            $endMonth
+        );
+    }
+
+    $res = $this->db->select(
+        'monthly_top_pages',
+        '*',
+        $conds,
+        __METHOD__,
+        [
+            'ORDER BY' => 'mtp_year ASC, mtp_month ASC, rank ASC'
+        ]
+    );
+
+    $rows = [];
+
+    foreach ( $res as $row ) {
+        $rows[] = [
+            'year' => (int)$row->mtp_year,
+            'month' => (int)$row->mtp_month,
+            'page_id' => (int)$row->page_id,
+            'page_title' => $row->page_title,
+            'edit_count' => (int)$row->edit_count,
+            'rank' => (int)$row->rank
+        ];
+    }
+
+    return $rows;
+}
+
 public function getMonthlyTopUsers(): array {
 
     $res = $this->db->select(
@@ -413,6 +466,105 @@ public function getMonthlyTopUsers(): array {
             ]
         );
     }
+
+    public function insertMonthlyTopPage(
+        int $year,
+        int $month,
+        int $pageId,
+        string $pageTitle,
+        int $editCount,
+        int $rank
+    ): void {
+        $this->db->insert(
+            'monthly_top_pages',
+            [
+                'mtp_year' => $year,
+                'mtp_month' => $month,
+                'page_id' => $pageId,
+                'page_title' => $pageTitle,
+                'edit_count' => $editCount,
+                'rank' => $rank
+            ],
+            __METHOD__
+        );
+    }
+
+    public function insertMonthlyTopUser(
+        int $year,
+        int $month,
+        int $userId,
+        string $userName,
+        int $editCount,
+        int $rank
+    ): void {
+        $this->db->insert(
+            'monthly_top_users',
+            [
+                'mtu_year' => $year,
+                'mtu_month' => $month,
+                'user_id' => $userId,
+                'user_name' => $userName,
+                'edit_count' => $editCount,
+                'rank' => $rank
+            ],
+            __METHOD__
+        );
+    }
+
+    public function getMonthlyTopUsersInRange(
+    ?int $startYear,
+    ?int $startMonth,
+    ?int $endYear,
+    ?int $endMonth
+): array {
+
+    $conds = [];
+
+    if ( $startYear !== null && $startMonth !== null ) {
+        $conds[] = sprintf(
+            '(mtu_year > %d OR (mtu_year = %d AND mtu_month >= %d))',
+            $startYear,
+            $startYear,
+            $startMonth
+        );
+    }
+
+    if ( $endYear !== null && $endMonth !== null ) {
+        $conds[] = sprintf(
+            '(mtu_year < %d OR (mtu_year = %d AND mtu_month <= %d))',
+            $endYear,
+            $endYear,
+            $endMonth
+        );
+    }
+
+    $res = $this->db->select(
+        'monthly_top_users',
+        '*',
+        $conds,
+        __METHOD__,
+        [
+            'ORDER BY' => 'mtu_year ASC, mtu_month ASC, rank ASC'
+        ]
+    );
+
+    $rows = [];
+
+    foreach ( $res as $row ) {
+        $rows[] = [
+            'year' => (int)$row->mtu_year,
+            'month' => (int)$row->mtu_month,
+            'user_id' => (int)$row->user_id,
+            'user_name' => $row->user_name,
+            'edit_count' => (int)$row->edit_count,
+            'rank' => (int)$row->rank
+        ];
+    }
+
+    return $rows;
+}
+
+    
 
     /**
      * ==============================

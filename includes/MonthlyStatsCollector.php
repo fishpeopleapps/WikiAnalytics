@@ -7,8 +7,6 @@ use Wikimedia\Rdbms\IDatabase;
 // use Wikimedia\Rdbms\Database;
 
 class MonthlyStatsCollector {
-
-    // private Database $dbr;
     private IDatabase $dbr;
 
     public function __construct() {
@@ -16,19 +14,6 @@ class MonthlyStatsCollector {
             ->getDBLoadBalancer()
             ->getConnection( DB_REPLICA );
     }
-
-//     public function __construct() {
-//     $db = MediaWikiServices::getInstance()
-//         ->getDBLoadBalancer()
-//         ->getConnection( DB_REPLICA );
-
-//     if ( !$db instanceof Database ) {
-//         throw new \RuntimeException( 'Failed to acquire database connection' );
-//     }
-
-//     $this->dbr = $db;
-// }
-
 
     /**
      * Collect all core wiki stats
@@ -144,33 +129,113 @@ class MonthlyStatsCollector {
         // do something
         return 0;
     }
-    private function getPagesCreatedThisMonth() {
-        // do something
-        return 0;
+    private function getPagesCreatedThisMonth(): int {
+        $start = $this->dbr->timestamp( strtotime( 'first day of this month 00:00:00' ) );
+        $end   = $this->dbr->timestamp( strtotime( 'first day of next month 00:00:00' ) );
+
+        return (int)$this->dbr->selectField(
+            [ 'revision', 'page' ],
+            'COUNT(DISTINCT page_id)',
+            [
+                'rev_page = page_id',
+                'rev_parent_id = 0', // first revision = page creation
+                'rev_timestamp >= ' . $this->dbr->addQuotes( $start ),
+                'rev_timestamp < ' . $this->dbr->addQuotes( $end ),
+                'page_is_redirect' => 0
+            ],
+            __METHOD__
+        );
     }
-    private function getEditsThisMonth() {
-        // do something
-        return 0;
+    private function getEditsThisMonth(): int {
+        $start = $this->dbr->timestamp( strtotime( 'first day of this month 00:00:00' ) );
+        $end   = $this->dbr->timestamp( strtotime( 'first day of next month 00:00:00' ) );
+
+        return (int)$this->dbr->selectField(
+            'revision',
+            'COUNT(*)',
+            [
+                'rev_timestamp >= ' . $this->dbr->addQuotes( $start ),
+                'rev_timestamp < ' . $this->dbr->addQuotes( $end ),
+            ],
+            __METHOD__
+        );
     }
-    private function getUploadsThisMonth() {
-        // do something
-        return 0;
+    private function getUploadsThisMonth(): int {
+        $start = $this->dbr->timestamp( strtotime( 'first day of this month 00:00:00' ) );
+        $end   = $this->dbr->timestamp( strtotime( 'first day of next month 00:00:00' ) );
+
+        return (int)$this->dbr->selectField(
+            'image',
+            'COUNT(*)',
+            [
+                'img_timestamp >= ' . $this->dbr->addQuotes( $start ),
+                'img_timestamp < ' . $this->dbr->addQuotes( $end ),
+            ],
+            __METHOD__
+        );
     }
-    private function getUploadBytesThisMonth() {
-        // do something
-        return 0;
+    private function getUploadBytesThisMonth(): int {
+        $start = $this->dbr->timestamp( strtotime( 'first day of this month 00:00:00' ) );
+        $end   = $this->dbr->timestamp( strtotime( 'first day of next month 00:00:00' ) );
+
+        return (int)$this->dbr->selectField(
+            'image',
+            'SUM(img_size)',
+            [
+                'img_timestamp >= ' . $this->dbr->addQuotes( $start ),
+                'img_timestamp < ' . $this->dbr->addQuotes( $end ),
+            ],
+            __METHOD__
+        );
     }
-    private function getNewUsersThisMonth() {
-        // do something
-        return 0;
+    private function getNewUsersThisMonth(): int {
+        $start = $this->dbr->timestamp( strtotime( 'first day of this month 00:00:00' ) );
+        $end   = $this->dbr->timestamp( strtotime( 'first day of next month 00:00:00' ) );
+
+        return (int)$this->dbr->selectField(
+            'user',
+            'COUNT(*)',
+            [
+                'user_registration >= ' . $this->dbr->addQuotes( $start ),
+                'user_registration < ' . $this->dbr->addQuotes( $end ),
+            ],
+            __METHOD__
+        );
     }
-    private function getReturningUsersThisMonth() {
-        // do something
-        return 0;
+    private function getReturningUsersThisMonth(): int {
+        $start = $this->dbr->timestamp( strtotime( 'first day of this month 00:00:00' ) );
+        $end   = $this->dbr->timestamp( strtotime( 'first day of next month 00:00:00' ) );
+
+        return (int)$this->dbr->selectField(
+            [ 'revision', 'actor', 'user' ],
+            'COUNT(DISTINCT user_id)',
+            [
+                'rev_actor = actor_id',
+                'actor_user = user_id',
+                'actor_user IS NOT NULL',
+                'rev_timestamp >= ' . $this->dbr->addQuotes( $start ),
+                'rev_timestamp < ' . $this->dbr->addQuotes( $end ),
+                'user_registration < ' . $this->dbr->addQuotes( $start ),
+            ],
+            __METHOD__
+        );
     }
-    private function getActiveEditorsThisMonth() {
-        // do something
-        return 0;
+    private function getActiveEditorsThisMonth(): int {
+        $start = $this->dbr->timestamp( strtotime( 'first day of this month 00:00:00' ) );
+        $end   = $this->dbr->timestamp( strtotime( 'first day of next month 00:00:00' ) );
+
+        return (int)$this->dbr->selectField(
+            [ 'revision', 'actor', 'user' ],
+            'COUNT(DISTINCT user_id)',
+            [
+                'rev_actor = actor_id',
+                'actor_user = user_id',
+                'actor_user IS NOT NULL',
+                'rev_timestamp >= ' . $this->dbr->addQuotes( $start ),
+                'rev_timestamp < ' . $this->dbr->addQuotes( $end ),
+            ],
+            __METHOD__
+        );
     }
 
     public function collectNamespaceMetrics(): array {
@@ -254,6 +319,90 @@ class MonthlyStatsCollector {
                 'total_bytes'  => (int)$row->total_bytes
             ];
         }
+
+        return $rows;
+    }
+
+    public function collectTopPages( int $year, int $month, int $limit = 10 ): array {
+        $start = $this->dbr->timestamp( sprintf( '%04d-%02d-01 00:00:00', $year, $month ) );
+        $end   = $this->dbr->timestamp( strtotime( '+1 month', strtotime( $start ) ) );
+
+        $res = $this->dbr->select(
+            [ 'revision', 'page' ],
+            [
+                'page_id',
+                'page_title',
+                'edit_count' => 'COUNT(rev_id)'
+            ],
+            [
+                'rev_page = page_id',
+                'rev_timestamp >= ' . $this->dbr->addQuotes( $start ),
+                'rev_timestamp < ' . $this->dbr->addQuotes( $end ),
+            ],
+            __METHOD__,
+            [
+                'GROUP BY' => 'page_id',
+                'ORDER BY' => 'edit_count DESC, page_id ASC',
+                'LIMIT' => $limit
+            ]
+        );
+
+        $rows = [];
+        foreach ( $res as $row ) {
+            $rows[] = [
+                'page_id' => (int)$row->page_id,
+                'page_title' => $row->page_title,
+                'edit_count' => (int)$row->edit_count,
+            ];
+        }
+        $rank = 1;
+        foreach ( $rows as &$row ) {
+            $row['rank'] = $rank++;
+        }
+        unset( $row );
+
+        return $rows;
+    }
+
+    public function collectTopUsers( int $year, int $month, int $limit = 10 ): array {
+        $start = $this->dbr->timestamp( sprintf( '%04d-%02d-01 00:00:00', $year, $month ) );
+        $end   = $this->dbr->timestamp( strtotime( '+1 month', strtotime( $start ) ) );
+
+        $res = $this->dbr->select(
+            [ 'revision', 'actor', 'user' ],
+            [
+                'user_id',
+                'user_name',
+                'edit_count' => 'COUNT(rev_id)'
+            ],
+            [
+                'rev_actor = actor_id',
+                'actor_user = user_id',
+                'actor_user IS NOT NULL',
+                'rev_timestamp >= ' . $this->dbr->addQuotes( $start ),
+                'rev_timestamp < ' . $this->dbr->addQuotes( $end ),
+            ],
+            __METHOD__,
+            [
+                'GROUP BY' => 'user_id',
+                'ORDER BY' => 'edit_count DESC, user_id ASC',
+                'LIMIT' => $limit
+            ]
+        );
+
+        $rows = [];
+        foreach ( $res as $row ) {
+            $rows[] = [
+                'user_id' => (int)$row->user_id,
+                'user_name' => $row->user_name,
+                'edit_count' => (int)$row->edit_count,
+            ];
+        }
+        $rank = 1;
+        foreach ( $rows as &$row ) {
+            $row['rank'] = $rank++;
+        }
+        unset( $row );
 
         return $rows;
     }
