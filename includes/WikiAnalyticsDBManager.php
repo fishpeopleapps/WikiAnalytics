@@ -228,56 +228,109 @@ class WikiAnalyticsDBManager {
         return $rows;
     }
 
-    public function getMonthlyFiletypeBreakdown(): array {
+    public function getMonthlyFiletypeBreakdown(
+        ?int $startYear,
+        ?int $startMonth,
+        ?int $endYear,
+        ?int $endMonth
+    ): array {
 
-    $res = $this->db->select(
-        'monthly_filetype_breakdown',
-        '*',
-        [],
-        __METHOD__,
-        [
-            'ORDER BY' => 'mfb_year ASC, mfb_month ASC, file_type ASC'
-        ]
-    );
+        $conds = [];
 
-    $rows = [];
+        if ( $startYear !== null && $startMonth !== null ) {
+            $conds[] = sprintf(
+                '(mfb_year > %d OR (mfb_year = %d AND mfb_month >= %d))',
+                $startYear,
+                $startYear,
+                $startMonth
+            );
+        }
 
-    foreach ( $res as $row ) {
-        $rows[] = [
-            'year' => (int)$row->mfb_year,
-            'month' => (int)$row->mfb_month,
-            'file_type' => $row->file_type,
-            'upload_count' => (int)$row->upload_count,
-            'total_bytes' => (int)$row->total_bytes
-        ];
+        if ( $endYear !== null && $endMonth !== null ) {
+            $conds[] = sprintf(
+                '(mfb_year < %d OR (mfb_year = %d AND mfb_month <= %d))',
+                $endYear,
+                $endYear,
+                $endMonth
+            );
+        }
+
+        $res = $this->db->select(
+            'monthly_filetype_breakdown',
+            '*',
+            $conds,
+            __METHOD__,
+            [
+                'ORDER BY' => 'mfb_year ASC, mfb_month ASC, file_type ASC'
+            ]
+        );
+
+        $rows = [];
+
+        foreach ( $res as $row ) {
+            $rows[] = [
+                'year' => (int)$row->mfb_year,
+                'month' => (int)$row->mfb_month,
+                'file_type' => $row->file_type,
+                'upload_count' => (int)$row->upload_count,
+                'total_bytes' => (int)$row->total_bytes
+            ];
+        }
+
+        return $rows;
     }
 
-    return $rows;
-}
+    public function getMonthlyNamespaceBreakdown(
+        ?int $startYear,
+        ?int $startMonth,
+        ?int $endYear,
+        ?int $endMonth
+    ): array {
 
-public function getMonthlyNamespaceBreakdown(): array {
-    $res = $this->db->select(
-        'monthly_namespace_breakdown',
-        '*',
-        [],
-        __METHOD__,
-        [
-            'ORDER BY' => 'mnb_year ASC, mnb_month ASC, namespace_id ASC'
-        ]
-    );
-    $rows = [];
+        $conds = [];
 
-    foreach ( $res as $row ) {
-        $rows[] = [
-            'year' => (int)$row->mnb_year,
-            'month' => (int)$row->mnb_month,
-            'namespace_id' => (int)$row->namespace_id,
-            'page_count' => (int)$row->page_count,
-            'edit_count' => (int)$row->edit_count
-        ];
+        if ( $startYear !== null && $startMonth !== null ) {
+            $conds[] = sprintf(
+                '(mnb_year > %d OR (mnb_year = %d AND mnb_month >= %d))',
+                $startYear,
+                $startYear,
+                $startMonth
+            );
+        }
+
+        if ( $endYear !== null && $endMonth !== null ) {
+            $conds[] = sprintf(
+                '(mnb_year < %d OR (mnb_year = %d AND mnb_month <= %d))',
+                $endYear,
+                $endYear,
+                $endMonth
+            );
+        }
+
+        $res = $this->db->select(
+            'monthly_namespace_breakdown',
+            '*',
+            $conds,
+            __METHOD__,
+            [
+                'ORDER BY' => 'mnb_year ASC, mnb_month ASC, namespace_id ASC'
+            ]
+        );
+
+        $rows = [];
+
+        foreach ( $res as $row ) {
+            $rows[] = [
+                'year' => (int)$row->mnb_year,
+                'month' => (int)$row->mnb_month,
+                'namespace_id' => (int)$row->namespace_id,
+                'page_count' => (int)$row->page_count,
+                'edit_count' => (int)$row->edit_count
+            ];
+        }
+
+        return $rows;
     }
-    return $rows;
-}
 
 
 

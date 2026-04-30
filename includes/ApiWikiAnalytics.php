@@ -22,10 +22,19 @@ class ApiWikiAnalytics extends ApiBase {
 			$range['endMonth']
 		);
 
-		// I'll need to fix these two if I want a per month or range option 
-		// (which also means fiving the WikiAnalyticsDBManager - adding additional methods for them)
-		$namespaceBreakdown = $dbManager->getMonthlyNamespaceBreakdown();
-		$filetypeBreakdown = $dbManager->getMonthlyFiletypeBreakdown();
+		$namespaceBreakdown = $dbManager->getMonthlyNamespaceBreakdown(
+			$range['startYear'],
+			$range['startMonth'],
+			$range['endYear'],
+			$range['endMonth']
+		);
+
+		$filetypeBreakdown = $dbManager->getMonthlyFiletypeBreakdown(
+			$range['startYear'],
+			$range['startMonth'],
+			$range['endYear'],
+			$range['endMonth']
+		);
 		
 		$monthlyTopPages = $dbManager->getMonthlyTopPagesInRange(
 			$range['startYear'],

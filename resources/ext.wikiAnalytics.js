@@ -287,10 +287,9 @@ mw.loader.using( 'ext.wikiAnalytics' ).then( () => {
 
 		const latest = months[ months.length - 1 ];
 
-		// const filtered = topPages.filter( row =>
-		// 	row.year === latest.year && row.month === latest.month
-		// );
-		const filtered = topPages;
+		const filtered = topPages.filter( row =>
+			row.year === latest.year && row.month === latest.month
+		);
 
 		const existing = document.getElementById( 'top-pages-table' );
 		if ( existing ) {
@@ -328,10 +327,9 @@ function renderTopUsersTable( graphGrid, topUsers, months ) {
 
 	const latest = months[ months.length - 1 ];
 
-	// const filtered = topUsers.filter( row =>
-	// 	row.year === latest.year && row.month === latest.month
-	// );
-	const filtered = topUsers;
+	const filtered = topUsers.filter( row =>
+		row.year === latest.year && row.month === latest.month
+	);
 
 	const fs = document.createElement( 'fieldset' );
 	fs.id = 'top-users-table';
